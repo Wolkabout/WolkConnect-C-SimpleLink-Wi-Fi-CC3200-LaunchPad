@@ -12,7 +12,8 @@ The example connects CC3200 LaunchPad to the WolkAbout IoT platform 2.0, sends t
 These instructions will lead you through the step-by-step process for setting up this project and trying it on your own CC3200 LaunchPad.
 
 > **Important**: *The repository must be cloned from the comand line using*
-> <code><b>git clone --recurse </b> https://<span></span>github.com/Wolkabout/WolkConnect-C-SimpleLink-Wi-Fi-CC3200-LaunchPad.git</code>
+> 
+<code><b>git clone --recurse </b> https://<span></span>github.com/Wolkabout/WolkConnect-C-SimpleLink-Wi-Fi-CC3200-LaunchPad.git</code>
 ### Prerequisites
 
  - Own CC3200 LaunchPad board. Here you can find the [User's guide](http://www.ti.com/lit/ug/swru372b/swru372b.pdf).
