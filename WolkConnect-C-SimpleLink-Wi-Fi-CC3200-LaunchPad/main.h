@@ -53,7 +53,7 @@
 #include "boot_info.h"
 #include "init_parser.h"
 
-#define APPLICATION_NAME        "Wolk Connect-C "
+#define APPLICATION_NAME        "WolkConnect-C-SimpleLink-Wi-Fi-CC3200-LaunchPad"
 #define APPLICATION_VERSION     "1.1.1"
 #define CONFIG_FILE             "/sys/config.txt"
 #define USER_IMAGE_1            "/sys/mcuimg2.bin"

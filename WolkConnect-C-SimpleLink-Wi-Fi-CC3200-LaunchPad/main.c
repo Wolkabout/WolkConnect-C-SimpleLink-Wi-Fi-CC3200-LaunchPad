@@ -966,7 +966,7 @@ static long WlanConnect()
 
     secParams.Key = (signed char*)ssid_password;
     secParams.KeyLen = strlen(ssid_password);
-    secParams.Type = SECURITY_TYPE;
+    secParams.Type = SL_SEC_TYPE_WPA_WPA2; //SECURITY_TYPE: SL_SEC_TYPE_OPEN, SL_SEC_TYPE_WEP or SL_SEC_TYPE_WPA_WPA2;
 
     lRetVal = sl_WlanConnect((signed char*)ssid_name, strlen(ssid_name), 0, &secParams, 0);
     ASSERT_ON_ERROR(lRetVal);
