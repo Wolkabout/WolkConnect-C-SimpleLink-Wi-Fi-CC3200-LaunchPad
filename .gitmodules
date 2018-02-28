@@ -1,0 +1,3 @@
+[submodule "WolkConnect-C-CC3200/WolkConnect-C"]
+	path = WolkConnect-C-CC3200/WolkConnect-C
+	url = https://github.com/Wolkabout/WolkConnect-C

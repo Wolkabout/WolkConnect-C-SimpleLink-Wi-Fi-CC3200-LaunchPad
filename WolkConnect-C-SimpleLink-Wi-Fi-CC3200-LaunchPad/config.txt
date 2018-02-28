@@ -1,0 +1,4 @@
+ssid_name=default_value
+ssid_password=default_value
+device_key=default_value
+device_password=default_value
