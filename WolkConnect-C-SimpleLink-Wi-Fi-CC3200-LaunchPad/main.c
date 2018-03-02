@@ -969,7 +969,7 @@ static long WlanConnect()
 
     secParams.Key = (signed char*)wifi_network_password;
     secParams.KeyLen = strlen(wifi_network_password);
-    secParams.Type = wifi_network_security_type;//SL_SEC_TYPE_WPA; //SECURITY_TYPE: SL_SEC_TYPE_OPEN, SL_SEC_TYPE_WEP or SL_SEC_TYPE_WPA_WPA2;
+    secParams.Type = wifi_network_security_type;
 
     lRetVal = sl_WlanConnect((signed char*)wifi_network_name, strlen(wifi_network_name), 0, &secParams, 0);
     ASSERT_ON_ERROR(lRetVal);
