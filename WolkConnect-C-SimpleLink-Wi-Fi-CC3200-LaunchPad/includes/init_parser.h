@@ -11,8 +11,8 @@
 #include "fs.h"
 #include "common.h"
 
-#define MAX_VALUE_LENGTH    40      //!< Max number of characters read for value from config file
-#define NUMBER_OF_OPTIONS   4       //!< Number of options
+#define MAX_VALUE_LENGTH    53      //!< Max number of characters read for value from config file
+#define NUMBER_OF_OPTIONS   5       //!< Number of options
 
 typedef struct init_options {
     char value[MAX_VALUE_LENGTH];   //!< Value which is read from init file
@@ -20,8 +20,9 @@ typedef struct init_options {
 } init_options_t;
 
 typedef struct parser_s {
-    init_options_t ssid_name;
-    init_options_t ssid_password;
+    init_options_t wifi_network_name;
+    init_options_t wifi_network_security_type;
+    init_options_t wifi_network_password;
 //    init_options_t platform_ip;
 //    init_options_t platform_port;
     init_options_t device_key;
@@ -39,18 +40,25 @@ typedef struct parser_s {
 int8_t init_file_parse(const char* file_path);
 
 /*!
- * \brief Get value for ssid_name which is read from init file
+ * \brief Get value for wifi_network_name which is read from init file
  *
- * \return NULL if ssid_name is not read, else string which is read
+ * \return NULL if wifi_network_name is not read, else string which is read
  */
-char* parser_get_ssid_name();
+char* parser_get_wifi_network_name();
 
 /*!
- * \brief Get value for ssid_password which is read from init file
+ * \brief Get value for wifi_network_security_type which is read from init file
  *
- * \return NULL if ssid_password is not read, else string which is read
+ * \return NULL if wifi_network_security_type is not read, else 0, 1 or 2 will be returned
  */
-char* parser_get_ssid_password();
+unsigned char parser_get_wifi_network_security_type();
+
+/*!
+ * \brief Get value for wifi_network_password which is read from init file
+ *
+ * \return NULL if wifi_network_password is not read, else string which is read
+ */
+char* parser_get_wifi_network_password();
 
 /*!
  * \brief Get value for device_key which is read from init file

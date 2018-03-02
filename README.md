@@ -1,7 +1,8 @@
 
 # WolkConnect-C-SimpleLink-Wi-Fi-CC3200-LaunchPad
 
-Example how to connect [SimpleLink™ Wi-Fi® CC3200 LaunchPad™](http://www.ti.com/tool/CC3200-LAUNCHXL) with [WolkAbout IoT platform 2.0](https://wolkabout.com/), send sensor readings, perform actuation and firmware update, using [WolkConnect-C](https://github.com/Wolkabout/WolkConnect-C).
+Example how to connect [SimpleLink™ Wi-Fi® CC3200 LaunchPad™](http://www.ti.com/tool/CC3200-LAUNCHXL) with [WolkAbout IoT platform 2.0](https://wolkabout.com/), send sensor readings, perform actuation and firmware update, using [WolkConnect-C](https://github.com/Wolkabout/WolkConnect-C) library.
+![simplelink-wi-fi-cc3200-launchpad](https://user-images.githubusercontent.com/10706360/36902885-4b3dca14-1e2c-11e8-9371-6bce59f33c1a.png)
 
 ## Description
 
