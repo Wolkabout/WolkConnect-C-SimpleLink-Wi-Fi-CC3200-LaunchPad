@@ -1,4 +1,5 @@
-ssid_name=default_value
-ssid_password=default_value
+wifi_network_name=default_value
+wifi_network_security_type=default_value
+wifi_network_password=default_value
 device_key=default_value
 device_password=default_value
