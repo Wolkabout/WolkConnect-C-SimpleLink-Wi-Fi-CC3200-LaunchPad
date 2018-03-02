@@ -15,8 +15,9 @@ unsigned long  g_ulIpAddr = 0;
 char g_cBsdBuf[BUF_SIZE];
 unsigned char gaucCmpBuf[128];
 // Connection variables
-char* ssid_name;
-char* ssid_password;
+char* wifi_network_name;
+unsigned char wifi_network_security_type;
+char* wifi_network_password;
 char* device_key;
 char* device_password;
 unsigned long ip_addr = 0x34d510e3;         // Demo IP 52.213.16.227 https://api-demo.wolkabout.com
@@ -584,15 +585,17 @@ static int8_t initializeCC3200() {
     UART_PRINT("Config file values read: \n\r");
     device_key = parser_get_device_key();
     device_password = parser_get_device_password();
-    ssid_name = parser_get_ssid_name();
-    ssid_password = parser_get_ssid_password();
-    UART_PRINT("SSID pwassword: %s\n\r", parser_get_ssid_name());
-    UART_PRINT("SSID password: %s\n\r", parser_get_ssid_password());
+    wifi_network_name = parser_get_wifi_network_name();
+    wifi_network_security_type = parser_get_wifi_network_security_type();
+    wifi_network_password = parser_get_wifi_network_password();
+    UART_PRINT("SSID name: %s\n\r", parser_get_wifi_network_name());
+    UART_PRINT("SSID security type: %d\n\r", parser_get_wifi_network_security_type());
+    UART_PRINT("SSID password: %s\n\r", parser_get_wifi_network_password());
     UART_PRINT("Device key: %s\n\r", parser_get_device_key());
     UART_PRINT("Device password: %s\n\r", parser_get_device_password());
 
     UART_PRINT("Device started as STATION \n\r");
-    UART_PRINT("Connecting to AP: %s ... \n\r", ssid_name);
+    UART_PRINT("Connecting to AP: %s ... \n\r", wifi_network_name);
     // Connecting to WLAN AP - Set with static parameters read from config file
     // After this call we will be connected and have IP address
     lRetVal = WlanConnect();
@@ -602,7 +605,7 @@ static int8_t initializeCC3200() {
         return lRetVal;
     }
 
-    UART_PRINT("Connected to AP: %s \n\r", ssid_name);
+    UART_PRINT("Connected to AP: %s \n\r", wifi_network_name);
     UART_PRINT("Device IP: %d.%d.%d.%d\n\r\n\r",
                SL_IPV4_BYTE(g_ulIpAddr,3),
                SL_IPV4_BYTE(g_ulIpAddr,2),
@@ -660,9 +663,9 @@ static void DisplayBanner(char * AppName)
 {
 
     Report("\n\n\n\r");
-    Report("\t\t *************************************************\n\r");
+    Report("\t\t ****************************************************************************\n\r");
     Report("\t\t      CC3200 %s Application       \n\r", AppName);
-    Report("\t\t *************************************************\n\r");
+    Report("\t\t ****************************************************************************\n\r");
     Report("\n\n\n\r");
 }
 
@@ -952,7 +955,7 @@ int BsdTcpClient(unsigned short usPort)
 
 /*!
  * \brief Connecting to a WLAN Accesspoint
- * \details This function connects to the required AP (SSID_NAME) with Security
+ * \details This function connects to the required AP (wifi_network_name) with Security
  *          parameters specified in te form of macros at the top of this file
  * \param[in]  None
  * \return Status value
@@ -964,11 +967,11 @@ static long WlanConnect()
     SlSecParams_t secParams = {0};
     long lRetVal = 0;
 
-    secParams.Key = (signed char*)ssid_password;
-    secParams.KeyLen = strlen(ssid_password);
-    secParams.Type = SL_SEC_TYPE_WPA_WPA2; //SECURITY_TYPE: SL_SEC_TYPE_OPEN, SL_SEC_TYPE_WEP or SL_SEC_TYPE_WPA_WPA2;
+    secParams.Key = (signed char*)wifi_network_password;
+    secParams.KeyLen = strlen(wifi_network_password);
+    secParams.Type = wifi_network_security_type;//SL_SEC_TYPE_WPA; //SECURITY_TYPE: SL_SEC_TYPE_OPEN, SL_SEC_TYPE_WEP or SL_SEC_TYPE_WPA_WPA2;
 
-    lRetVal = sl_WlanConnect((signed char*)ssid_name, strlen(ssid_name), 0, &secParams, 0);
+    lRetVal = sl_WlanConnect((signed char*)wifi_network_name, strlen(wifi_network_name), 0, &secParams, 0);
     ASSERT_ON_ERROR(lRetVal);
 
     /* Wait */

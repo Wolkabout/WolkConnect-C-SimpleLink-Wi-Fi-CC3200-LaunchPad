@@ -1,6 +1,6 @@
 #include "init_parser.h"
 
-static const char *valid_options[] = {"ssid_name", "ssid_password",
+static const char *valid_options[] = {"wifi_network_name", "wifi_network_security_type", "wifi_network_password",
                                       "device_key", "device_password"};                     //!< Options which are checked when parsing file
 static const char delimiter = '=';                                                          //!< Delimiter option=value
 
@@ -141,22 +141,42 @@ int8_t init_file_parse(const char* file_path)
     return all_values_read();
 }
 
-char* parser_get_ssid_name()
+char* parser_get_wifi_network_name()
 {
-    if (parser_state.ssid_name.is_read == 1)
+    if (parser_state.wifi_network_name.is_read == 1)
     {
-        return parser_state.ssid_name.value;
+        return parser_state.wifi_network_name.value;
     } else
     {
         return NULL;
     }
 }
 
-char* parser_get_ssid_password()
+unsigned char parser_get_wifi_network_security_type()
 {
-    if (parser_state.ssid_password.is_read == 1)
+    if (parser_state.wifi_network_security_type.is_read == 1)
     {
-        return parser_state.ssid_password.value;
+        if(strcmp(parser_state.wifi_network_security_type.value, "OPEN") == 0)
+            return 0;
+        else if(strcmp(parser_state.wifi_network_security_type.value, "WEP") == 0)
+            return 1;
+        else if(strcmp(parser_state.wifi_network_security_type.value, "WPA") == 0)
+            return 2;
+        else if(strcmp(parser_state.wifi_network_security_type.value, "WPA2") == 0)
+            return 2;
+        else
+            return NULL;
+    } else
+    {
+        return NULL;
+    }
+}
+
+char* parser_get_wifi_network_password()
+{
+    if (parser_state.wifi_network_password.is_read == 1)
+    {
+        return parser_state.wifi_network_password.value;
     } else
     {
         return NULL;
@@ -254,7 +274,7 @@ int8_t my_atoi(const char *str, int16_t* num)
 
 static int8_t all_values_read()
 {
-    return !(parser_state.ssid_name.is_read && parser_state.ssid_password.is_read
+    return !(parser_state.wifi_network_name.is_read && parser_state.wifi_network_password.is_read
             && parser_state.device_key.is_read && parser_state.device_password.is_read);
 }
 
@@ -278,24 +298,34 @@ static void add_value(char* value, int8_t option)
     case 0:
         if (strlen(value) > 0)
         {
-            parser_state.ssid_name.is_read = 1;
-            strcpy(parser_state.ssid_name.value, value);
+            parser_state.wifi_network_name.is_read = 1;
+            strcpy(parser_state.wifi_network_name.value, value);
         } else
         {
-            parser_state.ssid_name.is_read = 0;
+            parser_state.wifi_network_name.is_read = 0;
         }
         break;
     case 1:
         if (strlen(value) > 0)
         {
-            parser_state.ssid_password.is_read = 1;
-            strcpy(parser_state.ssid_password.value, value);
+            parser_state.wifi_network_security_type.is_read = 1;
+            strcpy(parser_state.wifi_network_security_type.value, value);
         } else
         {
-            parser_state.ssid_password.is_read = 0;
+            parser_state.wifi_network_security_type.is_read = 0;
         }
         break;
     case 2:
+        if (strlen(value) > 0)
+        {
+            parser_state.wifi_network_password.is_read = 1;
+            strcpy(parser_state.wifi_network_password.value, value);
+        } else
+        {
+            parser_state.wifi_network_password.is_read = 0;
+        }
+        break;
+    case 3:
         if (strlen(value) > 0)
         {
             parser_state.device_key.is_read = 1;
@@ -305,7 +335,7 @@ static void add_value(char* value, int8_t option)
             parser_state.device_key.is_read = 0;
         }
         break;
-    case 3:
+    case 4:
         if (strlen(value) > 0)
         {
             parser_state.device_password.is_read = 1;
