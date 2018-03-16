@@ -39,8 +39,10 @@ These instructions will lead you through the step-by-step process for setting up
 
 * Next step is to flash to binary images into the devices SFLASH memory from the Uniflash. Add new files:
 	* /sys/mcuimg.bin URL:{SDK_ROOT}/example/application_bootloader/ccs/Release
-	* /sys/mcuimg1.bin URL:{PROJECT_ROOT}/WolkConnect-C-SimpleLink-Wi-Fi-CC3200-LaunchPad/Release/WolkConnect-C-SimpleLink-Wi-Fi-CC3200-LaunchPad.bin
-	* /sys/config.txt which you should mannualy create as described below
+	* /sys/mcuimg1.bin URL:{PROJECT_ROOT}/WolkConnect-C-SimpleLink-Wi-Fi-CC3200-LaunchPad/WolkConnect-C-SimpleLink-Wi-Fi-CC3200-LaunchPad-Factory.bin
+	* /sys/config.txt URL:{PROJECT_ROOT}/WolkConnect-C-SimpleLink-Wi-Fi-CC3200-LaunchPad/config.txt
+
+> If you make changes in this project you will find your new .bin file located here {PROJECT_ROOT}/WolkConnect-C-SimpleLink-Wi-Fi-CC3200-LaunchPad/Release/WolkConnect-C-SimpleLink-Wi-Fi-CC3200-LaunchPad.bin
 
 ### /sys/config.txt description
 
@@ -87,7 +89,7 @@ Also, change the ORIGINAL_PROJECT_ROOT to the folder where you downloaded projec
 
 ## Performing firmware update
 * Details can be found in [User Manual for Web application](https://wolkabout.com/assets/User-Manual-for-Web-Application.pdf) **- this document will be updated with DFU section soon**
-* Upload the file **cc3200-wolkConnect101.bin** or any other .bin that you previously built for CC3200 LaunchPad
+* Upload the file **WolkConnect-C-SimpleLink-Wi-Fi-CC3200-LaunchPad-Factory.bin** or any other .bin that you previously built for CC3200 LaunchPad
 * The device should reboot itself and load a new firmware image!
   > **Note:** *The process of downloading and installing can be tracked with serial monitor as described below*
 
