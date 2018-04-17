@@ -60,10 +60,7 @@ Change default values with your own. WiFI parameters with your own. For *wifi_ne
 ### Creating device on Wolkabout platform
 
 **Important**:
-Create device manifest for the device with following:
-
- - one temperature sensor, reference as: **temp**
- - one actuator of type **SW,** reference as: **led**
+While creating a device on [WolkAbout IoT platform 2.0](https://wolkabout.com/assets/User-Manual-for-Web-Application.pdf) import *manifest.json* file attached to this repo.
 
 ### Testing the example
 
