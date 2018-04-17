@@ -17,13 +17,13 @@ These instructions will lead you through the step-by-step process for setting up
 > <code><b>git clone --recurse </b> https://<span></span>github.com/Wolkabout/WolkConnect-C-SimpleLink-Wi-Fi-CC3200-LaunchPad.git</code>
 ### Prerequisites
 
- - Own CC3200 LaunchPad board. Here you can find the [User's guide](http://www.ti.com/lit/ug/swru372b/swru372b.pdf).
+ - Own [CC3200 LaunchPad](http://www.ti.com/tool/CC3200-LAUNCHXL) board. Here you can find the [User's guide](http://www.ti.com/lit/ug/swru372b/swru372b.pdf).
 
  - [Texas Instruments Uniflash](http://www.ti.com/tool/UNIFLASH) to flash binary images to the SFLASH memory of LaunchPad.
 
- - For editing and recompiling this project, you will need [Code Composer Studio (CCS) Integrated Development Environment (IDE) for Wireless Connectivity](http://www.ti.com/tool/CCSTUDIO-WCS), alongside SimpleLink Wi-Fi CC3200 SDK. It will be the best to install this SDK in C:\TI folder for the ease of setup.
-
  - Account on [WolkAbout IoT platform 2.0](https://demo.wolkabout.com).
+
+ - For editing and recompiling this project, you will need [Code Composer Studio (CCS) Integrated Development Environment (IDE) for Wireless Connectivity](http://www.ti.com/tool/CCSTUDIO-WCS), alongside SimpleLink Wi-Fi CC3200 SDK. It will be the best to install this SDK in C:\TI folder for the ease of setup.
 
 ## Trying the example without rebuilding the project
 
