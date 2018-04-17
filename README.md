@@ -49,6 +49,7 @@ These instructions will lead you through the step-by-step process for setting up
 The file should look like this:
 ```
 ssid_name=default_value
+wifi_network_security_type=default_value
 ssid_password=default_value
 device_key=default_value
 device_password=default_value
