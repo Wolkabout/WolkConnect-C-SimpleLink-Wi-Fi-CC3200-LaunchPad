@@ -55,7 +55,7 @@ device_key=default_value
 device_password=default_value
 ```
 
-Change default values with your own. WiFI parameters with your own. For wifi_network_security_type insert one of follow WEP, WPA, WPA2 or OPEN. The device_key and device_password you will get when you create your device on [WolkAbout IoT platform 2.0](https://wolkabout.com/assets/User-Manual-for-Web-Application.pdf).
+Change default values with your own. WiFI parameters with your own. For *wifi_network_security_type* insert one of follow WEP, WPA, WPA2 or OPEN. The device_key and device_password you will get when you create your device on [WolkAbout IoT platform 2.0](https://wolkabout.com/assets/User-Manual-for-Web-Application.pdf).
 
 ### Creating device on Wolkabout platform
 
