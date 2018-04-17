@@ -59,7 +59,7 @@ Change default values with your own. WiFI parameters with your own. For *wifi_ne
 
 ### Creating device on Wolkabout IoT platform 2.0
 
-While creating a device on WolkAbout IoT platform 2.0 import *manifest.json* file attached to this repo. Here you can find the [WolkAbout™ IoT Tool Web Application User Manal](https://wolkabout.com/assets/User-Manual-for-Web-Application.pdf).
+While creating a device on WolkAbout IoT platform 2.0 import *manifest.json* file attached to this repo. Here you can find the [WolkAbout™ IoT Tool Web Application User Manual](https://wolkabout.com/assets/User-Manual-for-Web-Application.pdf).
 
 ### Testing the example
 
@@ -85,7 +85,7 @@ Also, change the ORIGINAL_PROJECT_ROOT to the folder where you downloaded projec
 * For trying the example follow the steps from above for **Trying example without rebuilding the project**
 
 ## Performing firmware update
-* Details can be found in [WolkAbout™ IoT Tool Web Application User Manal](https://wolkabout.com/assets/User-Manual-for-Web-Application.pdf) **- this document will be updated with DFU section soon**
+* Details can be found in [WolkAbout™ IoT Tool Web Application User Manual](https://wolkabout.com/assets/User-Manual-for-Web-Application.pdf) **- this document will be updated with DFU section soon**
 * Upload the file **WolkConnect-C-SimpleLink-Wi-Fi-CC3200-LaunchPad-Factory.bin** or any other .bin that you previously built for CC3200 LaunchPad
 * The device should reboot itself and load a new firmware image!
   > **Note:** *The process of downloading and installing can be tracked with serial monitor as described below*
