@@ -55,12 +55,11 @@ device_key=default_value
 device_password=default_value
 ```
 
-Change default values with your own. WiFI parameters with your own. For *wifi_network_security_type* insert one of follow WEP, WPA, WPA2 or OPEN. The device_key and device_password you will get when you create your device on [WolkAbout IoT platform 2.0](https://wolkabout.com/assets/User-Manual-for-Web-Application.pdf).
+Change default values with your own. WiFI parameters with your own. For *wifi_network_security_type* insert one of follow WEP, WPA, WPA2 or OPEN. The device_key and device_password you will get when you create your device on WolkAbout IoT platform 2.0.
 
-### Creating device on Wolkabout platform
+### Creating device on Wolkabout IoT platform 2.0
 
-**Important**:
-While creating a device on [WolkAbout IoT platform 2.0](https://wolkabout.com/assets/User-Manual-for-Web-Application.pdf) import *manifest.json* file attached to this repo.
+While creating a device on WolkAbout IoT platform 2.0 import *manifest.json* file attached to this repo. Here you can find the [Wolkabout IoT platform 2.0 User Guide](https://wolkabout.com/assets/User-Manual-for-Web-Application.pdf).
 
 ### Testing the example
 
@@ -106,5 +105,5 @@ Also, change the ORIGINAL_PROJECT_ROOT to the folder where you downloaded projec
 
 ## Built with
 
-* [WolkConnector-C](https://github.com/Wolkabout/WolkConnect-C) - library used to communicate with the Wolkabout platform
+* [WolkConnector-C](https://github.com/Wolkabout/WolkConnect-C) - library used to communicate with the Wolkabout IoT platform 2.0
 * [CC3200 SDK](http://www.ti.com/tool/CC3200SDK) - Software development kit by Texas Instruments
