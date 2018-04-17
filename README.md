@@ -85,8 +85,8 @@ Also, change the ORIGINAL_PROJECT_ROOT to the folder where you downloaded projec
 * For trying the example follow the steps from above for **Trying example without rebuilding the project**
 
 ## Performing firmware update
-* Details can be found in [WolkAbout™ IoT Tool Web Application User Manual](https://wolkabout.com/assets/User-Manual-for-Web-Application.pdf) **- this document will be updated with DFU section soon**
-* Upload the file **WolkConnect-C-SimpleLink-Wi-Fi-CC3200-LaunchPad-Factory.bin** or any other .bin that you previously built for CC3200 LaunchPad
+* Details can be found in [WolkAbout™ IoT Tool Web Application User Manual](https://wolkabout.com/assets/User-Manual-for-Web-Application.pdf)
+* Upload the file **WolkConnect-C-SimpleLink-Wi-Fi-CC3200-LaunchPad/WolkConnect-C-SimpleLink-Wi-Fi-CC3200-LaunchPad-Factory.bin** or any other .bin that you previously built for CC3200 LaunchPad
 * The device should reboot itself and load a new firmware image!
   > **Note:** *The process of downloading and installing can be tracked with serial monitor as described below*
 
