@@ -19,7 +19,7 @@ These instructions will lead you through the step-by-step process for setting up
 
  - Own [CC3200 LaunchPad](http://www.ti.com/tool/CC3200-LAUNCHXL) board. Here you can find the [User's guide](http://www.ti.com/lit/ug/swru372b/swru372b.pdf).
 
- - [Texas Instruments Uniflash](http://www.ti.com/tool/UNIFLASH) to flash binary images to the SFLASH memory of LaunchPad.
+ - [Texas Instruments Uniflash v3.4.1](http://www.ti.com/tool/UNIFLASH) to flash binary images to the SFLASH memory of LaunchPad.
 
  - Account on [WolkAbout IoT platform 2.0](https://demo.wolkabout.com).
 
