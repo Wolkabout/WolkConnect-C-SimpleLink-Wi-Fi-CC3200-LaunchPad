@@ -440,6 +440,7 @@ int main()
     if (wolk_init(&wolk,
               send_buffer, receive_buffer,
               actuation_handler, actuator_status_provider,
+              NULL, NULL,
               device_key, device_password, PROTOCOL_JSON_SINGLE, actuator_references, num_actuator_references) != W_FALSE)
     {
         UART_PRINT("Error initializing WolkConnect-C \n\r");
@@ -501,7 +502,7 @@ int main()
             wolk_publish(&wolk);
             UART_PRINT("Sensor reading %.2f \n\r", fCurrentTempC);
         }
-        wolk_process(&wolk);
+        wolk_process(&wolk, 5);
         _SlNonOsMainLoopTask();
     }
 
