@@ -59,7 +59,7 @@ Change default values with your own. WiFI parameters with your own. For *wifi_ne
 
 ### Creating device on Wolkabout IoT platform 2.0
 
-While creating a device on WolkAbout IoT platform 2.0 import *manifest.json* file attached to this repo. Here you can find the [WolkAbout™ IoT Tool Web Application User Manual](https://wolkabout.com/assets/User-Manual-for-Web-Application.pdf).
+While creating a device on WolkAbout IoT platform 2.0 import *manifest.json* file attached to this repo. Here you can find the [WolkAbout™ IoT User Guides for Web](https://wolkabout.com/developers/user-guides/web/device-management/).
 
 ### Testing the example
 
