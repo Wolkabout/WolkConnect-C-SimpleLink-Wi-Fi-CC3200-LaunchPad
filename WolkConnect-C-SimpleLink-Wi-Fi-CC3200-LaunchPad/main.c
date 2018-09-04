@@ -144,7 +144,7 @@ static size_t configuration_provider(char (*reference)[CONFIGURATION_REFERENCE_S
     WOLK_ASSERT(max_num_configuration_items >= NUMBER_OF_CONFIGURATION);
 
     strcpy(reference[0], "led_mode");
-    strcpy(value[0], (led_mode==true ? "true" : "false") );
+    strcpy(value[0], (led_mode==true ? "true" : "false"));
     UART_PRINT("Configuration Provider - Reference: %s | Value: %s\n", reference[0], value[0]);
 
     return CONFIGURATION_ITEMS_SIZE;
