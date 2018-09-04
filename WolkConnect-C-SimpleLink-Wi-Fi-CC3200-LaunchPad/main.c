@@ -57,6 +57,7 @@ static wolk_ctx_t wolk;
 static volatile bool keep_running = true;
 static bool led_on = false;
 static bool led_enabled = false;
+static bool led_mode = false;
 static bool has_sensor_reading = false;
 //****************************************************************************
 //                            FIRMWARE VARIABLES
@@ -89,7 +90,7 @@ void LEDBlinkyRoutine();
 //****************************************************************************
 static void actuation_handler(const char* reference, const char* value)
 {
-    printf("Actuation handler - Reference: %s Value: %s\n\r", reference, value);
+    UART_PRINT("Actuation handler - Reference: %s Value: %s\n\r", reference, value);
     if (strcmp(reference, "led") == 0)
     {
         if(strcmp(value, "false") == 0)
@@ -104,8 +105,6 @@ static void actuation_handler(const char* reference, const char* value)
 
 static actuator_status_t actuator_status_provider(const char* reference)
 {
-    printf("Actuator status provider - Reference: %s\n\r", reference);
-
     actuator_status_t actuator_status;
     actuator_status_init(&actuator_status, "", ACTUATOR_STATE_ERROR);
 
@@ -119,7 +118,36 @@ static actuator_status_t actuator_status_provider(const char* reference)
             actuator_status_init(&actuator_status, "false", ACTUATOR_STATE_READY);
         }
     }
+    UART_PRINT("Actuator status provider - Reference: %s | Actuator Status: %s\n\r", reference, actuator_status.value);
+
     return actuator_status;
+}
+
+static void configuration_handler(char (*reference)[CONFIGURATION_REFERENCE_SIZE],
+                                  char (*value)[CONFIGURATION_VALUE_SIZE],
+                                  size_t num_configuration_items)
+{
+    UART_PRINT("Configuration Handler - Reference: %s | Value: %s\n", reference[0], value[0]);
+
+    if(!strcmp("led_mode", reference[0]))
+    {
+        printf("Received Reference is: %s", reference[0]);
+        strcmp("true", value[0])==0 ? (led_mode=true) : (led_mode=false);
+    }
+}
+
+static size_t configuration_provider(char (*reference)[CONFIGURATION_REFERENCE_SIZE],
+                                     char (*value)[CONFIGURATION_VALUE_SIZE],
+                                     size_t max_num_configuration_items)
+{
+    WOLK_UNUSED(max_num_configuration_items);
+    WOLK_ASSERT(max_num_configuration_items >= NUMBER_OF_CONFIGURATION);
+
+    strcpy(reference[0], "led_mode");
+    strcpy(value[0], (led_mode==true ? "true" : "false"));
+    UART_PRINT("Configuration Provider - Reference: %s | Value: %s\n", reference[0], value[0]);
+
+    return CONFIGURATION_ITEMS_SIZE;
 }
 
 static int send_buffer(unsigned char* buffer, unsigned int len)
@@ -440,6 +468,7 @@ int main()
     if (wolk_init(&wolk,
               send_buffer, receive_buffer,
               actuation_handler, actuator_status_provider,
+              configuration_handler, configuration_provider,
               device_key, device_password, PROTOCOL_JSON_SINGLE, actuator_references, num_actuator_references) != W_FALSE)
     {
         UART_PRINT("Error initializing WolkConnect-C \n\r");
@@ -501,7 +530,7 @@ int main()
             wolk_publish(&wolk);
             UART_PRINT("Sensor reading %.2f \n\r", fCurrentTempC);
         }
-        wolk_process(&wolk);
+        wolk_process(&wolk, 5);
         _SlNonOsMainLoopTask();
     }
 
@@ -901,13 +930,21 @@ void LEDBlinkyRoutine()
     no_interrupt++;
     if(led_enabled)
     {
-        if (led_on) {
+        if(led_mode)
+        {
+            if (led_on) {
+                GPIO_IF_LedOn(MCU_RED_LED_GPIO);
+                led_on = false;
+            } else
+            {
+                GPIO_IF_LedOff(MCU_RED_LED_GPIO);
+                led_on = true;
+            }
+        }
+        else
+        {
             GPIO_IF_LedOn(MCU_RED_LED_GPIO);
             led_on = false;
-        } else
-        {
-            GPIO_IF_LedOff(MCU_RED_LED_GPIO);
-            led_on = true;
         }
 
     } else
