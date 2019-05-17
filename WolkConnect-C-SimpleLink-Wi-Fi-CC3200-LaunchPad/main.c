@@ -36,8 +36,12 @@ unsigned char wifi_network_security_type;
 char* wifi_network_password;
 char* device_key;
 char* device_password;
-unsigned long ip_addr = 0x34d510e3;         // Demo IP 52.213.16.227 https://api-demo.wolkabout.com
-unsigned short port_num = 1883;             // Demo port 1883
+
+unsigned long ip_addr = 0x00; //temporarily
+
+static const char *hostname = "mqtt-verification2.wolkabout.com";
+bool secure = true;
+unsigned short port_num = 8883;
 
 #if defined(ccs) || defined (gcc)
 extern void (* const g_pfnVectors[])(void);
@@ -81,9 +85,12 @@ static void BoardInit();
 static void InitializeAppVariables();
 static long ConfigureSimpleLinkToDefaultState();
 static void RebootMCU();
-static int BsdTcpClient(unsigned short usPort);
+//static int BsdTcpClient(unsigned short usPort);
+static int SslTcpClient(unsigned short usPort);
 static long WlanConnect();
 void LEDBlinkyRoutine();
+static _i8 set_current_device_time(void);
+//static bool update_ca_cert(void);
 
 //****************************************************************************
 //                      WOLK CONNECTIVITY STARTS HERE
@@ -127,11 +134,11 @@ static void configuration_handler(char (*reference)[CONFIGURATION_REFERENCE_SIZE
                                   char (*value)[CONFIGURATION_VALUE_SIZE],
                                   size_t num_configuration_items)
 {
-    UART_PRINT("Configuration Handler - Reference: %s | Value: %s\n", reference[0], value[0]);
+    UART_PRINT("Configuration Handler - Reference: %s | Value: %s\n\r", reference[0], value[0]);
 
     if(!strcmp("led_mode", reference[0]))
     {
-        printf("Received Reference is: %s", reference[0]);
+        UART_PRINT("Received Reference is: %s\n\r", reference[0]);
         strcmp("true", value[0])==0 ? (led_mode=true) : (led_mode=false);
     }
 }
@@ -145,10 +152,11 @@ static size_t configuration_provider(char (*reference)[CONFIGURATION_REFERENCE_S
 
     strcpy(reference[0], "led_mode");
     strcpy(value[0], (led_mode==true ? "true" : "false"));
-    UART_PRINT("Configuration Provider - Reference: %s | Value: %s\n", reference[0], value[0]);
+    UART_PRINT("Configuration Provider - Reference: %s | Value: %s\n\r", reference[0], value[0]);
 
     return CONFIGURATION_ITEMS_SIZE;
 }
+
 
 static int send_buffer(unsigned char* buffer, unsigned int len)
 {
@@ -169,7 +177,7 @@ static int send_buffer(unsigned char* buffer, unsigned int len)
         // Try to reopen socket
         UART_PRINT("Socket error, trying to reopen it \n\r");
         sl_Close(iSockID);
-        int lRetVal = BsdTcpClient((unsigned short)port_num);
+        int lRetVal = SslTcpClient((unsigned short)port_num);
         // Try to reconnect to wlan
         if (lRetVal < 0)
         {
@@ -177,7 +185,7 @@ static int send_buffer(unsigned char* buffer, unsigned int len)
             // Blocking function
             WlanConnect();
             UART_PRINT("Reconnected to wlan \n\r");
-            BsdTcpClient((unsigned short)port_num);
+            SslTcpClient((unsigned short)port_num);
             if (wolk_connect(&wolk) != W_FALSE)
             {
                 UART_PRINT("Wolk client - Error connecting to server \n\r");
@@ -200,7 +208,7 @@ static int receive_buffer(unsigned char* buffer, unsigned int max_bytes)
         // Try to reopen socket
         UART_PRINT("Socket error, trying to reopen it \n\r");
         sl_Close(iSockID);
-        int lRetVal = BsdTcpClient((unsigned short)port_num);
+        int lRetVal = SslTcpClient((unsigned short)port_num);
         // Try to reconnect to wlan
         if (lRetVal < 0)
         {
@@ -208,7 +216,7 @@ static int receive_buffer(unsigned char* buffer, unsigned int max_bytes)
             // Blocking function
             WlanConnect();
             UART_PRINT("Reconnected to wlan \n\r");
-            BsdTcpClient((unsigned short)port_num);
+            SslTcpClient((unsigned short)port_num);
             if (wolk_connect(&wolk) != W_FALSE)
             {
                 UART_PRINT("Wolk client - Error connecting to server \n\r");
@@ -220,6 +228,7 @@ static int receive_buffer(unsigned char* buffer, unsigned int max_bytes)
 
     return n;
 }
+
 
 //****************************************************************************
 //                            FIRMWARE HANDLERS
@@ -511,7 +520,9 @@ int main()
     initial_temp = (initial_temp - 32) * 5 / 9;
 
     wolk_add_numeric_sensor_reading(&wolk, sensor_reference, initial_temp, 0);
+    UART_PRINT("Wolk client - try publishing...\n\r");
     wolk_publish(&wolk);
+    UART_PRINT("Wolk client - Published\n\r");
 
     // Enable timer
     TimerEnable(TIMERA3_BASE, TIMER_A);
@@ -534,7 +545,7 @@ int main()
         _SlNonOsMainLoopTask();
     }
 
-    printf("Wolk client - Disconnecting\n\r");
+    UART_PRINT("Wolk client - Disconnecting\n\r");
     wolk_disconnect(&wolk);
 
     UART_PRINT("Exiting Application ...\n\r");
@@ -579,7 +590,6 @@ static int8_t initializeCC3200() {
     // Note that all profiles and persistent settings that were done on the
     // device will be lost
     lRetVal = ConfigureSimpleLinkToDefaultState();
-
     if(lRetVal < 0)
     {
         if (DEVICE_NOT_IN_STATION_MODE == lRetVal)
@@ -588,7 +598,6 @@ static int8_t initializeCC3200() {
         }
         return lRetVal;
     }
-
     UART_PRINT("Device is configured in default state \n\r");
 
     // Asumption is that the device is configured in station mode already
@@ -622,10 +631,26 @@ static int8_t initializeCC3200() {
     // Testin init file
     if (init_file_parse(CONFIG_FILE) != 0)
     {
-        printf("Config file couldn't be parsed \n\r");
         UART_PRINT("Config file couldn't be parsed \n\r");
         return lRetVal;
     }
+
+    lRetVal = set_current_device_time();
+    if(lRetVal < 0)
+    {
+        UART_PRINT("Failed to set current device time \n\r");
+
+        return lRetVal;
+    }
+
+    //update cert
+//    lRetVal = update_ca_cert();
+//    if( lRetVal < 0)
+//    {
+//        UART_PRINT("Unable to update ca.crt certificate");
+//
+//        return lRetVal;
+//    }
 
     UART_PRINT("Config file values read: \n\r");
     device_key = parser_get_device_key();
@@ -657,7 +682,7 @@ static int8_t initializeCC3200() {
                SL_IPV4_BYTE(g_ulIpAddr,1),
                SL_IPV4_BYTE(g_ulIpAddr,0));
 
-    lRetVal = BsdTcpClient((unsigned short)port_num);
+    lRetVal = SslTcpClient((unsigned short)port_num);
     if(lRetVal < 0)
     {
         UART_PRINT("TCP Client failed\n\r");
@@ -967,8 +992,10 @@ void LEDBlinkyRoutine()
  * \return 0 on success, -1 on Error.
  */
 
-int BsdTcpClient(unsigned short usPort)
+int SslTcpClient(unsigned short usPort)
 {
+    UART_PRINT("Entering SsslTcpClient\n\r");
+
     int             iCounter;
     SlSockAddrIn_t  sAddr;
     int             iAddrSize;
@@ -980,25 +1007,76 @@ int BsdTcpClient(unsigned short usPort)
         g_cBsdBuf[iCounter] = (char)(iCounter % 10);
     }
 
-    //filling the TCP server socket address
-    sAddr.sin_family = SL_AF_INET;
-    sAddr.sin_port = sl_Htons((unsigned short) usPort);
-    sAddr.sin_addr.s_addr = sl_Htonl((unsigned int) ip_addr);
-
-    iAddrSize = sizeof(SlSockAddrIn_t);
+    unsigned long ulIpAddr = 0;
+    char host_name[128];
+    strncpy(host_name, hostname, strlen(hostname));
+    long lRetVal = sl_NetAppDnsGetHostByName((signed char*)host_name, strlen(host_name), &ulIpAddr, SL_AF_INET);
+    if(lRetVal < 0 || ulIpAddr == 0)
+    {
+        UART_PRINT("Error to get IP address from DNS\n\r");
+        ASSERT_ON_ERROR(-1);
+    }
+    //temporarly
+    ip_addr = ulIpAddr;
 
     // creating a TCP socket
-    iSockID = sl_Socket(SL_AF_INET, SL_SOCK_STREAM, 0);
+    iSockID = sl_Socket(SL_AF_INET, SL_SOCK_STREAM, (secure ? SL_SEC_SOCKET : 0));
     if (iSockID < 0)
     {
         ASSERT_ON_ERROR(SOCKET_CREATE_ERROR);
     }
 
+    SlSockNonblocking_t socket_non_blocking;
+    socket_non_blocking.NonblockingEnabled = 0;
+    int16_t set_socket_option_result = sl_SetSockOpt(iSockID, SL_SOL_SOCKET, SL_SO_NONBLOCKING, &socket_non_blocking, sizeof(SlSockNonblocking_t));
+    if(set_socket_option_result < 0)
+    {
+        UART_PRINT("Unable to set blocking mode");
+        ASSERT_ON_ERROR(-1);
+    }
+
+    //SSL setup
+    if(secure)
+    {
+        SlSockSecureMethod method;
+        method.secureMethod = SL_SO_SEC_METHOD_SSLv3_TLSV1_2;
+        int16_t set_socket_option_result = sl_SetSockOpt(iSockID, SL_SOL_SOCKET, SL_SO_SECMETHOD, &method, sizeof(SlSockSecureMethod));
+        if(set_socket_option_result < 0)
+        {
+            UART_PRINT("Unable to set socket security methods");
+            ASSERT_ON_ERROR(-1);
+        }
+
+        SlSockSecureMask mask;
+        mask.secureMask = SL_SEC_MASK_TLS_RSA_WITH_AES_256_CBC_SHA256;
+        set_socket_option_result = sl_SetSockOpt(iSockID, SL_SOL_SOCKET, SL_SO_SECURE_MASK, &mask, sizeof(SlSockSecureMask));
+
+        if(set_socket_option_result < 0)
+        {
+            UART_PRINT("Unable to set socket security mask");
+            ASSERT_ON_ERROR(-1);
+        }
+
+        set_socket_option_result = sl_SetSockOpt(iSockID, SL_SOL_SOCKET, SL_SO_SECURE_FILES_CA_FILE_NAME, CA_CERT, strlen(CA_CERT));
+        if( set_socket_option_result < 0 )
+        {
+            UART_PRINT("Unable to set socket certificate");
+            ASSERT_ON_ERROR(-1);
+        }
+    }
+
+
+    //filling the TCP server socket address
+    sAddr.sin_family = SL_AF_INET;
+    sAddr.sin_port = sl_Htons((unsigned short) usPort);
+    sAddr.sin_addr.s_addr = sl_Htonl((unsigned int) ulIpAddr);
+    iAddrSize = sizeof(SlSockAddrIn_t);
+    UART_PRINT("Server IP is: 0x%x\n\rServer port is: %u\n\r", ulIpAddr, usPort);
+
     // connecting to TCP server
     iStatus = sl_Connect(iSockID, ( SlSockAddr_t *)&sAddr, iAddrSize);
     if (iStatus < 0)
     {
-        // error
         sl_Close(iSockID);
         ASSERT_ON_ERROR(CONNECT_ERROR);
     }
@@ -1254,3 +1332,143 @@ void SimpleLinkSockEventHandler(SlSockEvent_t *pSock)
             break;
     }
 }
+
+/*!
+ * \brief This function set current time in the device
+ * \param[in] None
+ * \return None
+ */
+static _i8 set_current_device_time(void)
+{
+     _i8 retVal = -1;
+     SlDateTime_t dateTime= {0};
+
+     dateTime.sl_tm_day =   (_u32)DATE;
+     dateTime.sl_tm_mon =   (_u32)MONTH;
+     dateTime.sl_tm_year =  (_u32)YEAR;
+     dateTime.sl_tm_hour =  (_u32)HOUR;
+     dateTime.sl_tm_min =   (_u32)MINUTE;
+     dateTime.sl_tm_sec =   (_u32)SECOND;
+
+     retVal = sl_DevSet(SL_DEVICE_GENERAL_CONFIGURATION, SL_DEVICE_GENERAL_CONFIGURATION_DATE_TIME, sizeof(SlDateTime_t), (_u8 *)(&dateTime));
+     if( retVal < 0)
+     {
+         ASSERT_ON_ERROR(retVal);
+     }
+
+     _u8 configLen = sizeof(SlDateTime_t);
+     _u8 configOpt = SL_DEVICE_GENERAL_CONFIGURATION_DATE_TIME;
+     retVal = sl_DevGet(SL_DEVICE_GENERAL_CONFIGURATION,&configOpt, &configLen,(_u8 *)(&dateTime));
+     if( retVal < 0)
+     {
+         ASSERT_ON_ERROR(retVal);
+     }
+     UART_PRINT("Read Date and Time is D/M/Y - H:M:S : %d/%d/%d - %.2d:%.2d:%.2d \n\r", dateTime.sl_tm_day, dateTime.sl_tm_mon, dateTime.sl_tm_year, dateTime.sl_tm_hour, dateTime.sl_tm_min, dateTime.sl_tm_sec);
+
+     return retVal;
+}
+
+//
+//#define CA_CERT "ca.der"
+////#define CA_CERT "ca_cert.der"
+//#define CA_CERT_VERSION "ca_version.txt"
+//#define CA_CERTIFICATE_VERSION 1
+//
+//static bool update_ca_cert(void)
+//{
+//    UART_PRINT("Updating ca certificate");
+//
+//    uint32_t token = 0;
+//    uint8_t ca_version = 0;
+//
+//    //sl_FsDel(CA_CERT, token);
+//
+//    int32_t ca_version_file = 0;
+//    int32_t file_opened = sl_FsOpen(CA_CERT_VERSION, FS_MODE_OPEN_READ, &token, &ca_version_file);
+//    if(file_opened != 0)
+//    {
+//        UART_PRINT("Ca version file does not exist, creating");
+//        file_opened = sl_FsOpen(CA_CERT_VERSION, FS_MODE_OPEN_CREATE(1, _FS_FILE_OPEN_FLAG_COMMIT|_FS_FILE_PUBLIC_WRITE), &token, &ca_version_file);
+//        if(file_opened < 0)
+//        {
+//            UART_PRINT("Error creating ca version file %d\r\n", (int16_t)file_opened);
+//            return false;
+//        }
+//    }
+//    else
+//    {
+//        int32_t bytes_read = sl_FsRead(ca_version_file, 0, &ca_version, 1);
+//        if (bytes_read != 1)
+//        {
+//            UART_PRINT("Error reading ca version from file");
+//            //return false;
+//        }
+//    }
+//
+//    UART_PRINT("Ca version is %d\r\n", ca_version);
+//
+//    int16_t ca_version_file_closed = sl_FsClose(ca_version_file, 0, 0, 0);
+//    if(ca_version_file_closed < 0)
+//    {
+//        UART_PRINT("Error closing ca version file");
+//        return false;
+//    }
+//
+//    // version check
+//    if(ca_version == CA_CERTIFICATE_VERSION)
+//    {
+//        return true;
+//    }
+//
+//    UART_PRINT("Deleting old cert file");
+//    sl_FsDel(CA_CERT, token);
+//
+//    //ca.crt file
+//    const uint8_t cert[] = {0x30, 0x82, 0x03, 0xF9, 0x30, 0x82, 0x02, 0xE1, 0xA0, 0x03, 0x02, 0x01, 0x02, 0x02, 0x09, 0x00, 0xBC, 0xE2, 0x55, 0xD4, 0x2D, 0x7F, 0xF7, 0x1D, 0x30, 0x0D, 0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x0B, 0x05, 0x00, 0x30, 0x81, 0x91, 0x31, 0x0B, 0x30, 0x09, 0x06, 0x03, 0x55, 0x04, 0x06, 0x13, 0x02, 0x52, 0x53, 0x31, 0x0F, 0x30, 0x0D, 0x06, 0x03, 0x55, 0x04, 0x08, 0x0C, 0x06, 0x53, 0x65, 0x72, 0x62, 0x69, 0x61, 0x31, 0x11, 0x30, 0x0F, 0x06, 0x03, 0x55, 0x04, 0x07, 0x0C, 0x08, 0x4E, 0x6F, 0x76, 0x69, 0x20, 0x53, 0x61, 0x64, 0x31, 0x12, 0x30, 0x10, 0x06, 0x03, 0x55, 0x04, 0x0A, 0x0C, 0x09, 0x77, 0x6F, 0x6C, 0x6B, 0x61, 0x62, 0x6F, 0x75, 0x74, 0x31, 0x0C, 0x30, 0x0A, 0x06, 0x03, 0x55, 0x04, 0x0B, 0x0C, 0x03, 0x52, 0x26, 0x44, 0x31, 0x16, 0x30, 0x14, 0x06, 0x03, 0x55, 0x04, 0x03, 0x0C, 0x0D, 0x77, 0x6F, 0x6C, 0x6B, 0x61, 0x62, 0x6F, 0x75, 0x74, 0x2E, 0x63, 0x6F, 0x6D, 0x31, 0x24, 0x30, 0x22, 0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x09, 0x01, 0x16, 0x15, 0x73, 0x75, 0x70, 0x70, 0x6F, 0x72, 0x74, 0x40, 0x77, 0x6F, 0x6C, 0x6B, 0x61, 0x62, 0x6F, 0x75, 0x74, 0x2E, 0x63, 0x6F, 0x6D, 0x30, 0x20, 0x17, 0x0D, 0x31, 0x35, 0x31, 0x32, 0x31, 0x30, 0x31, 0x32, 0x33, 0x39, 0x31, 0x30, 0x5A, 0x18, 0x0F, 0x32, 0x30, 0x36, 0x35, 0x31, 0x31, 0x32, 0x37, 0x31, 0x32, 0x33, 0x39, 0x31, 0x30, 0x5A, 0x30, 0x81, 0x91, 0x31, 0x0B, 0x30, 0x09, 0x06, 0x03, 0x55, 0x04, 0x06, 0x13, 0x02, 0x52, 0x53, 0x31, 0x0F, 0x30, 0x0D, 0x06, 0x03, 0x55, 0x04, 0x08, 0x0C, 0x06, 0x53, 0x65, 0x72, 0x62, 0x69, 0x61, 0x31, 0x11, 0x30, 0x0F, 0x06, 0x03, 0x55, 0x04, 0x07, 0x0C, 0x08, 0x4E, 0x6F, 0x76, 0x69, 0x20, 0x53, 0x61, 0x64, 0x31, 0x12, 0x30, 0x10, 0x06, 0x03, 0x55, 0x04, 0x0A, 0x0C, 0x09, 0x77, 0x6F, 0x6C, 0x6B, 0x61, 0x62, 0x6F, 0x75, 0x74, 0x31, 0x0C, 0x30, 0x0A, 0x06, 0x03, 0x55, 0x04, 0x0B, 0x0C, 0x03, 0x52, 0x26, 0x44, 0x31, 0x16, 0x30, 0x14, 0x06, 0x03, 0x55, 0x04, 0x03, 0x0C, 0x0D, 0x77, 0x6F, 0x6C, 0x6B, 0x61, 0x62, 0x6F, 0x75, 0x74, 0x2E, 0x63, 0x6F, 0x6D, 0x31, 0x24, 0x30, 0x22, 0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x09, 0x01, 0x16, 0x15, 0x73, 0x75, 0x70, 0x70, 0x6F, 0x72, 0x74, 0x40, 0x77, 0x6F, 0x6C, 0x6B, 0x61, 0x62, 0x6F, 0x75, 0x74, 0x2E, 0x63, 0x6F, 0x6D, 0x30, 0x82, 0x01, 0x22, 0x30, 0x0D, 0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x01, 0x05, 0x00, 0x03, 0x82, 0x01, 0x0F, 0x00, 0x30, 0x82, 0x01, 0x0A, 0x02, 0x82, 0x01, 0x01, 0x00, 0xAE, 0xD0, 0xB6, 0x27, 0xF2, 0x7C, 0x54, 0xA8, 0x57, 0x32, 0x4B, 0x5A, 0xE8, 0xEA, 0x30, 0xA5, 0x62, 0x80, 0x17, 0x48, 0x77, 0x09, 0xAC, 0x03, 0x52, 0x54, 0xD8, 0x7B, 0x0F, 0x27, 0x9E, 0x57, 0xA0, 0xA7, 0xE7, 0x0C, 0xD6, 0xD6, 0x8A, 0xC8, 0xDB, 0xAF, 0x51, 0xDE, 0x41, 0x66, 0x7B, 0xA2, 0x8F, 0xB8, 0x2F, 0x1D, 0x71, 0xA4, 0xE5, 0x00, 0x27, 0x75, 0x16, 0x7D, 0xFD, 0xF2, 0x59, 0xC4, 0x0C, 0x7D, 0xC6, 0x68, 0xBA, 0xD9, 0x9E, 0x37, 0xEF, 0x6D, 0x65, 0x9F, 0x1F, 0xF7, 0x61, 0x18, 0x1F, 0x6C, 0x4D, 0x75, 0x64, 0x5C, 0x2D, 0x3F, 0x1F, 0x32, 0x36, 0x0D, 0xBA, 0x2E, 0x3C, 0x6C, 0xC1, 0x71, 0x38, 0x7E, 0x25, 0x12, 0x20, 0x59, 0xF2, 0x78, 0xF7, 0x07, 0xBC, 0x47, 0xE7, 0x39, 0x83, 0xEC, 0x4C, 0xF9, 0x7F, 0xB8, 0xAB, 0x43, 0xE8, 0x3B, 0x09, 0x28, 0x9D, 0x63, 0xB9, 0x66, 0x47, 0xF5, 0x46, 0x49, 0xE7, 0x16, 0xDE, 0x6B, 0x31, 0xCA, 0x49, 0x5D, 0xD4, 0x5D, 0xD9, 0xF3, 0xF2, 0x70, 0x8C, 0x9B, 0xFD, 0x42, 0x91, 0xAE, 0xA9, 0xF8, 0xF6, 0xBC, 0xA2, 0x9F, 0x78, 0xFD, 0xF7, 0xD6, 0x7B, 0xAE, 0xB7, 0x36, 0x25, 0x25, 0xEF, 0x59, 0x11, 0x1F, 0x73, 0x70, 0x8F, 0xC1, 0x26, 0xDC, 0x50, 0x1B, 0xCA, 0x06, 0xC3, 0x4F, 0xDD, 0x43, 0x8C, 0xB7, 0xF0, 0xA3, 0x0D, 0x6E, 0x39, 0x4A, 0x59, 0x99, 0xE8, 0x01, 0x97, 0x36, 0x21, 0x8E, 0x0A, 0xAE, 0x21, 0x93, 0x50, 0x29, 0x54, 0x97, 0x7F, 0xA4, 0x73, 0x1D, 0xA0, 0x31, 0xD7, 0x55, 0x8C, 0xAF, 0x96, 0xF9, 0xBC, 0x65, 0x05, 0xD1, 0x81, 0x5C, 0xC7, 0xA0, 0x2E, 0xA7, 0x0D, 0x29, 0x95, 0x0F, 0x10, 0xBB, 0x69, 0xEA, 0x71, 0x48, 0xDA, 0x56, 0x62, 0x6C, 0xF1, 0x26, 0x8C, 0x9E, 0xC4, 0xEB, 0x85, 0xF5, 0x49, 0x83, 0x02, 0x03, 0x01, 0x00, 0x01, 0xA3, 0x50, 0x30, 0x4E, 0x30, 0x1D, 0x06, 0x03, 0x55, 0x1D, 0x0E, 0x04, 0x16, 0x04, 0x14, 0x0B, 0x93, 0x9C, 0x4B, 0x1B, 0xB1, 0xE4, 0xCF, 0xB7, 0x0C, 0xFB, 0x1A, 0x37, 0x54, 0x4A, 0x28, 0xCC, 0x7D, 0x31, 0x9F, 0x30, 0x1F, 0x06, 0x03, 0x55, 0x1D, 0x23, 0x04, 0x18, 0x30, 0x16, 0x80, 0x14, 0x0B, 0x93, 0x9C, 0x4B, 0x1B, 0xB1, 0xE4, 0xCF, 0xB7, 0x0C, 0xFB, 0x1A, 0x37, 0x54, 0x4A, 0x28, 0xCC, 0x7D, 0x31, 0x9F, 0x30, 0x0C, 0x06, 0x03, 0x55, 0x1D, 0x13, 0x04, 0x05, 0x30, 0x03, 0x01, 0x01, 0xFF, 0x30, 0x0D, 0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x0B, 0x05, 0x00, 0x03, 0x82, 0x01, 0x01, 0x00, 0x9C, 0x47, 0xE8, 0x72, 0xB8, 0xEC, 0x2D, 0xC7, 0xF6, 0x74, 0x27, 0x80, 0xE4, 0x6E, 0xEC, 0x9E, 0xA4, 0x11, 0xFD, 0x5D, 0x8A, 0x32, 0x6E, 0x95, 0x51, 0x1D, 0x28, 0x19, 0xA3, 0x98, 0x2B, 0xA0, 0x03, 0x2C, 0x3A, 0x07, 0x9B, 0xE1, 0xDB, 0x09, 0x89, 0x4C, 0x3F, 0x93, 0xFA, 0x34, 0x62, 0x62, 0xC4, 0x10, 0xA7, 0xBE, 0xF6, 0xD3, 0xFD, 0xC2, 0x22, 0xCA, 0x29, 0xDE, 0x19, 0x03, 0x53, 0x01, 0xFF, 0x19, 0xF9, 0x73, 0x5C, 0x37, 0xA2, 0x0E, 0xCB, 0x20, 0x7A, 0xA7, 0xC3, 0x6A, 0x01, 0x3C, 0xE7, 0x7E, 0xBF, 0x88, 0x95, 0x64, 0xC0, 0x6B, 0xFA, 0xA6, 0x2D, 0xFA, 0x71, 0xF1, 0x42, 0x18, 0x4B, 0x93, 0x4F, 0xA4, 0x6D, 0x28, 0x52, 0x94, 0x0F, 0xB2, 0xE5, 0x0B, 0x4C, 0x1E, 0x07, 0xE2, 0xF3, 0xAC, 0xA3, 0x05, 0xF1, 0x6A, 0xB9, 0x14, 0x82, 0xF9, 0x4E, 0xA1, 0x7C, 0x37, 0xA0, 0xBE, 0x63, 0x56, 0xF5, 0x99, 0xE9, 0xC8, 0x6F, 0x14, 0xBE, 0x96, 0x92, 0x40, 0x5A, 0xA7, 0xCE, 0x08, 0x2B, 0xBF, 0x23, 0xE2, 0xBA, 0x9A, 0x6D, 0x35, 0x95, 0x44, 0x0F, 0x97, 0xE7, 0x92, 0x8D, 0xE6, 0x79, 0x5A, 0x5E, 0xDA, 0x7E, 0xEA, 0x95, 0xB8, 0x5D, 0x84, 0x37, 0x30, 0x20, 0x5F, 0x58, 0x57, 0x6C, 0xB5, 0x83, 0xAF, 0xCF, 0xDA, 0x4D, 0xF3, 0x94, 0xAF, 0xE4, 0x68, 0x09, 0x0E, 0xEC, 0xA5, 0x83, 0xF1, 0x87, 0x19, 0x78, 0x3C, 0x88, 0xB1, 0x3B, 0x63, 0xF0, 0xA4, 0xB7, 0xFE, 0xEB, 0x8D, 0x47, 0xED, 0x35, 0x5F, 0x01, 0x1F, 0xDE, 0x66, 0x90, 0x0F, 0x5F, 0xEE, 0xF6, 0xBF, 0x54, 0x08, 0x17, 0x0A, 0xDF, 0x58, 0xD6, 0x2F, 0xA9, 0x00, 0x49, 0xBD, 0x46, 0x6E, 0xA9, 0xD2, 0x18, 0xBE, 0x85, 0xAD, 0x9F, 0x38, 0x8F, 0x28, 0x6B, 0xB6, 0xB2, 0x65, 0xD1, 0xE8, 0xFE, 0x28, 0x6B, 0xA5};
+//    uint32_t cert_size = sizeof(cert);
+//
+//    int32_t ca_file = 0;
+//    file_opened = sl_FsOpen(CA_CERT, FS_MODE_OPEN_CREATE(cert_size, _FS_FILE_OPEN_FLAG_COMMIT|_FS_FILE_PUBLIC_WRITE), &token, &ca_file);
+//    if(file_opened < 0)
+//    {
+//        UART_PRINT("Error creating ca file %d\r\n", (int16_t)file_opened);
+//        return false;
+//    }
+//
+//    if(sl_FsWrite(ca_file, 0, cert, cert_size) != cert_size)
+//    {
+//        UART_PRINT("Cert not written succefully");
+//        return false;
+//    }
+//
+//    UART_PRINT("Cert written succefully");
+//
+//    int16_t ca_file_closed = sl_FsClose(ca_file, 0, 0, 0);
+//    if(ca_file_closed < 0)
+//    {
+//        UART_PRINT("Error closing ca file");
+//        return false;
+//    }
+//
+//    file_opened = sl_FsOpen("ca_version.txt", FS_MODE_OPEN_WRITE, &token, &ca_version_file);
+//    if(file_opened != 0)
+//    {
+//        UART_PRINT("Error opeening ca version file");
+//    }
+//
+//    uint8_t version = CA_CERTIFICATE_VERSION;
+//    if (sl_FsWrite(ca_version_file, 0, &version, 1) != 1)
+//    {
+//        UART_PRINT("Error writing ca version to file");
+//        return false;
+//    }
+//
+//    ca_version_file_closed = sl_FsClose(ca_version_file, 0, 0, 0);
+//    if(ca_version_file_closed < 0)
+//    {
+//        UART_PRINT("Error closing ca version file");
+//        return false;
+//    }
+//
+//    return true;
+//}

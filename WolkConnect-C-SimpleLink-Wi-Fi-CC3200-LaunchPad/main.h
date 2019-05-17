@@ -67,6 +67,15 @@
 #define BLINK_INTERVAL_MS   1000
 #define SENSOR_INTERVAL_S   5
 
+#define DATE                17;          // Day of month (DD format) range 1-31
+#define MONTH               05;          // Month (MM format) in the range of 1-12
+#define YEAR                2019;        // Year (YYYY format)
+#define HOUR                10;          // Hours in the range of 0-23
+#define MINUTE              03;          // Minutes in the range of 0-59
+#define SECOND              00;          // Seconds in the range of  0-59
+
+#define CA_CERT "/cert/ca.der"
+
 // Application specific status/error codes
 typedef enum{
     // Choosing -0x7D0 to avoid overlap w/ host-driver's error codes
