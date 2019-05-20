@@ -37,11 +37,11 @@ char* wifi_network_password;
 char* device_key;
 char* device_password;
 
-unsigned long ip_addr = 0x00; //temporarily
+unsigned long ip_addr = 0;//0x34335DBD; //temporarily
 
 static const char *hostname = "mqtt-verification2.wolkabout.com";
-bool secure = true;
-unsigned short port_num = 8883;
+bool secure = false;
+unsigned short port_num = 1883;
 
 #if defined(ccs) || defined (gcc)
 extern void (* const g_pfnVectors[])(void);
@@ -175,24 +175,31 @@ static int send_buffer(unsigned char* buffer, unsigned int len)
     if (n < 0)
     {
         // Try to reopen socket
-        UART_PRINT("Socket error, trying to reopen it \n\r");
-        sl_Close(iSockID);
+        UART_PRINT("Socket error, trying to reopen it\n\r Error code is: %d\n\r", n);
+        if (sl_Close(iSockID) != SUCCESS)
+            ASSERT_ON_ERROR(SOCKET_CLOSE_ERROR);
+
         int lRetVal = SslTcpClient((unsigned short)port_num);
         // Try to reconnect to wlan
         if (lRetVal < 0)
         {
             UART_PRINT("Trying to reconnect to wlan \n\r");
             // Blocking function
-            WlanConnect();
+            if (WlanConnect() != SUCCESS)
+                ASSERT_ON_ERROR(-1);
+
             UART_PRINT("Reconnected to wlan \n\r");
-            SslTcpClient((unsigned short)port_num);
+            int lRetVal = SslTcpClient((unsigned short)port_num);
+            if (lRetVal < 0)
+                ASSERT_ON_ERROR(lRetVal);
+
             if (wolk_connect(&wolk) != W_FALSE)
             {
                 UART_PRINT("Wolk client - Error connecting to server \n\r");
-                return -1;
+                return FAILURE;
             }
         }
-        return -1;
+//        return FAILURE;
     }
 
     return n;
@@ -561,7 +568,6 @@ int main()
 //****************************************************************************
 //                 LOCAL FUNCTIONS IMPLEMENTATIONS
 //****************************************************************************
-
 static int8_t initializeCC3200() {
     int lRetVal = -1;
     // Board Initialization
@@ -681,6 +687,31 @@ static int8_t initializeCC3200() {
                SL_IPV4_BYTE(g_ulIpAddr,2),
                SL_IPV4_BYTE(g_ulIpAddr,1),
                SL_IPV4_BYTE(g_ulIpAddr,0));
+
+    //ping to check if exist
+    UART_PRINT("Ping 8.8.8.8 \n\r");
+    SlPingReport_t report;
+    SlPingStartCommand_t pingCommand;
+
+    pingCommand.Ip = SL_IPV4_VAL(8,8,8,8);     // destination IP address is 10.1.1.200
+    pingCommand.PingSize = 50;                   // size of ping, in bytes
+    pingCommand.PingIntervalTime = 80;           // delay between pings, in milliseconds
+    pingCommand.PingRequestTimeout = 500;        // timeout for every ping in milliseconds
+    pingCommand.TotalNumberOfAttempts = 3;       // max number of ping requests. 0 - forever
+    pingCommand.Flags = 0;                        // report only when finished
+
+    if (sl_NetAppPingStart( &pingCommand, SL_AF_INET, &report, NULL ) != SUCCESS )
+        ASSERT_ON_ERROR(-1);
+    UART_PRINT("------------------\n\rPing report\n\r------------------\n\r" \
+             "PacketsSent: %lu\n\r" \
+             "PacketsReceived: %lu\n\r" \
+             "MinRoundTime: %d\n\r" \
+             "MaxRoundTime: %d\n\r" \
+             "AvgRoundTime: %d\n\r" \
+             "TestTime: %lu\n\r------------------\n\r" \
+             , report.PacketsSent, report.PacketsReceived, report.MinRoundTime, report.MaxRoundTime, report.AvgRoundTime, report.TestTime);
+
+    UART_PRINT("Successfully pinged\n\r");
 
     lRetVal = SslTcpClient((unsigned short)port_num);
     if(lRetVal < 0)
@@ -1010,11 +1041,11 @@ int SslTcpClient(unsigned short usPort)
     unsigned long ulIpAddr = 0;
     char host_name[128];
     strncpy(host_name, hostname, strlen(hostname));
-    long lRetVal = sl_NetAppDnsGetHostByName((signed char*)host_name, strlen(host_name), &ulIpAddr, SL_AF_INET);
+    long lRetVal = sl_NetAppDnsGetHostByName((signed char*)host_name, strlen(hostname), &ulIpAddr, SL_AF_INET);
     if(lRetVal < 0 || ulIpAddr == 0)
     {
         UART_PRINT("Error to get IP address from DNS\n\r");
-        ASSERT_ON_ERROR(-1);
+        ASSERT_ON_ERROR(lRetVal);
     }
     //temporarly
     ip_addr = ulIpAddr;
@@ -1044,42 +1075,71 @@ int SslTcpClient(unsigned short usPort)
         if(set_socket_option_result < 0)
         {
             UART_PRINT("Unable to set socket security methods");
-            ASSERT_ON_ERROR(-1);
+            ASSERT_ON_ERROR(set_socket_option_result);
         }
 
         SlSockSecureMask mask;
         mask.secureMask = SL_SEC_MASK_TLS_RSA_WITH_AES_256_CBC_SHA256;
         set_socket_option_result = sl_SetSockOpt(iSockID, SL_SOL_SOCKET, SL_SO_SECURE_MASK, &mask, sizeof(SlSockSecureMask));
-
         if(set_socket_option_result < 0)
         {
             UART_PRINT("Unable to set socket security mask");
-            ASSERT_ON_ERROR(-1);
+            ASSERT_ON_ERROR(set_socket_option_result);
         }
 
         set_socket_option_result = sl_SetSockOpt(iSockID, SL_SOL_SOCKET, SL_SO_SECURE_FILES_CA_FILE_NAME, CA_CERT, strlen(CA_CERT));
         if( set_socket_option_result < 0 )
         {
             UART_PRINT("Unable to set socket certificate");
-            ASSERT_ON_ERROR(-1);
+            ASSERT_ON_ERROR(set_socket_option_result);
+        }
+
+        UART_PRINT("\n\r--------------------------------------------------------\n\r--------------------------------------------------------\n\r" \
+                   "Reading %s file from file system...\n\r", CA_CERT);
+        unsigned long token = 0;
+#define CERT_NUM_CHAR 1462
+        _u8 ReadBuffer[CERT_NUM_CHAR];
+        signed long ca_version_file = 0;
+        int32_t bytes_read = 0;
+
+        int32_t file_opened = sl_FsOpen(CA_CERT, FS_MODE_OPEN_READ, &token, &ca_version_file);
+        if(file_opened != 0)
+        {
+            UART_PRINT("File does not exist! \n\r");
+        }
+        else
+        {
+            bytes_read = sl_FsRead(ca_version_file, 0, (_u8 *)ReadBuffer, CERT_NUM_CHAR);
+            if (bytes_read < 0)
+            {
+                UART_PRINT("Error reading %s file from file system \n\r", CA_CERT);
+            }
+            else
+            {
+                UART_PRINT("Number of read bytes from file is: %d\r\n\r\n", bytes_read);
+
+                for(int i=0; i<CERT_NUM_CHAR; i++){
+                    UART_PRINT("%c", ReadBuffer[i]);
+                }
+
+                UART_PRINT("\n\r--------------------------------------------------------\n\r--------------------------------------------------------\n\r\n\r");
+            }
         }
     }
-
 
     //filling the TCP server socket address
     sAddr.sin_family = SL_AF_INET;
     sAddr.sin_port = sl_Htons((unsigned short) usPort);
     sAddr.sin_addr.s_addr = sl_Htonl((unsigned int) ulIpAddr);
     iAddrSize = sizeof(SlSockAddrIn_t);
-    UART_PRINT("Server IP is: 0x%x\n\rServer port is: %u\n\r", ulIpAddr, usPort);
+    UART_PRINT("\n\rServer IP is: 0x%x\n\rServer port is: %u\n\r", ulIpAddr, usPort);
 
-    // connecting to TCP server
-    iStatus = sl_Connect(iSockID, ( SlSockAddr_t *)&sAddr, iAddrSize);
+    //need to retry
+    iStatus = sl_Connect(iSockID, (SlSockAddr_t*)&sAddr, iAddrSize);
     if (iStatus < 0)
-    {
-        sl_Close(iSockID);
         ASSERT_ON_ERROR(CONNECT_ERROR);
-    }
+
+    UART_PRINT("%s - Connected\n\r", hostname);
 
     return SUCCESS;
 }
