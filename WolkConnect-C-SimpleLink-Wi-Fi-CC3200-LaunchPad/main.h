@@ -67,14 +67,18 @@
 #define BLINK_INTERVAL_MS   1000
 #define SENSOR_INTERVAL_S   5
 
-#define DATE                17;          // Day of month (DD format) range 1-31
+#define DATE                20;          // Day of month (DD format) range 1-31
 #define MONTH               05;          // Month (MM format) in the range of 1-12
 #define YEAR                2019;        // Year (YYYY format)
-#define HOUR                10;          // Hours in the range of 0-23
-#define MINUTE              03;          // Minutes in the range of 0-59
+#define HOUR                14;          // Hours in the range of 0-23
+#define MINUTE              30;          // Minutes in the range of 0-59
 #define SECOND              00;          // Seconds in the range of  0-59
 
-#define CA_CERT "/cert/ca.der"
+//#define CA_CERT "ca.der"
+#define CA_CERT "cawritten.der"
+//#define CA_CERT "ca_cert.der"
+#define CA_CERT_VERSION "ca_version.txt"
+#define CA_CERTIFICATE_VERSION 1
 
 // Application specific status/error codes
 typedef enum{
