@@ -31,24 +31,20 @@
 #define APPLICATION_VERSION     "1.1.1"
 #define CONFIG_FILE             "/sys/config.txt"
 
-#define CA_CERT "cawritten.der"
-#define CA_CERT_VERSION "ca_version.txt"
-#define CA_CERTIFICATE_VERSION 1
+#define CA_CERT                 "ca.der"
 
-#define DATE                20;          // Day of month (DD format) range 1-31
-#define MONTH               05;          // Month (MM format) in the range of 1-12
-#define YEAR                2019;        // Year (YYYY format)
-#define HOUR                14;          // Hours in the range of 0-23
-#define MINUTE              30;          // Minutes in the range of 0-59
-#define SECOND              00;          // Seconds in the range of  0-59
+#define DATE                    20;          // Day of month (DD format) range 1-31
+#define MONTH                   05;          // Month (MM format) in the range of 1-12
+#define YEAR                    2019;        // Year (YYYY format)
+#define HOUR                    14;          // Hours in the range of 0-23
+#define MINUTE                  30;          // Minutes in the range of 0-59
+#define SECOND                  00;          // Seconds in the range of  0-59
 
+#define BUF_SIZE                2048
+#define TCP_PACKET_COUNT        1000
+#define SL_STOP_TIMEOUT         200
 
-#define BUF_SIZE            2048
-#define TCP_PACKET_COUNT    1000
-#define SL_STOP_TIMEOUT     200
-
-#define BLINK_INTERVAL_MS   1000
-#define SENSOR_INTERVAL_S   5
+#define BLINK_INTERVAL_MS       1000
 
 // Application specific status/error codes
 typedef enum{
@@ -78,24 +74,24 @@ typedef enum{
 //                 GLOBAL VARIABLES -- Start
 //*****************************************************************************
 static int iSockID;
-unsigned long  g_ulStatus;                              //SimpleLink Status
+static unsigned long  g_ulStatus;                              //SimpleLink Status
 static unsigned long  g_ulGatewayIP = 0;                //Network Gateway IP address
-unsigned char  g_ucConnectionSSID[SSID_LEN_MAX+1];      //Connection SSID
-unsigned char  g_ucConnectionBSSID[BSSID_LEN_MAX];      //Connection BSSID
+static unsigned char  g_ucConnectionSSID[SSID_LEN_MAX+1];      //Connection SSID
+static unsigned char  g_ucConnectionBSSID[BSSID_LEN_MAX];      //Connection BSSID
 volatile unsigned long  g_ulPacketCount;
 
 static unsigned long  g_ulIpAddr = 0;
-char g_cBsdBuf[BUF_SIZE];
-unsigned char gaucCmpBuf[128];
+static char g_cBsdBuf[BUF_SIZE];
+static unsigned char gaucCmpBuf[128];
 
-char* wifi_network_name;
-unsigned char wifi_network_security_type;
-char* wifi_network_password;
+static char* wifi_network_name;
+static unsigned char wifi_network_security_type;
+static char* wifi_network_password;
 
 unsigned long ip_addr;
 
 static const char *hostname = "mqtt-verification2.wolkabout.com";
-static bool secure = 0;
+static bool secure = false;
 static unsigned short port_num = 1883;
 
 #if defined(ccs) || defined (gcc)

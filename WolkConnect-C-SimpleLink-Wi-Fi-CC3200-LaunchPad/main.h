@@ -47,7 +47,6 @@ static wolk_ctx_t wolk;
 //****************************************************************************
 
 static const long max_firmware_size = 100*1024;
-//const int16_t firmware_chunk_size = 512;
 sBootInfo_t boot_info;
 
 
