@@ -31,7 +31,8 @@
 #define APPLICATION_VERSION     "1.1.1"
 #define CONFIG_FILE             "/sys/config.txt"
 
-#define CA_CERT                 "ca.der"
+#define CA_CERT                 "/cert/ca.der"
+#define CERT_NUM_CHAR 1463
 
 #define DATE                    20;          // Day of month (DD format) range 1-31
 #define MONTH                   05;          // Month (MM format) in the range of 1-12
